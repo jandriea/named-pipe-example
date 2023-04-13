@@ -32,6 +32,7 @@
 #include <sys/select.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <math.h>
 
 #include "pipe_handler.h"
 
@@ -48,7 +49,7 @@
  * char buffer[256];
  * int num_bytes_read = read(pipe_fd, buffer, 256);
  */
-static int open_pipe(const char *name, bool isRead) {
+int open_pipe(const char *name, bool isRead) {
     int fd;
     if (access(name, F_OK) == -1) {
         if (mkfifo(name, 0666) == -1) {
@@ -83,7 +84,7 @@ static int open_pipe(const char *name, bool isRead) {
  * @return The number of bytes written to the named pipe, or -1 on error.
  * @throws If an error occurs while writing to the named pipe, an appropriate error message will be printed to stderr.
  */
-static int write_to_pipe(int fd, char *data, size_t datalen) {
+int write_to_pipe(int fd, char *data, size_t datalen) {
     int bytes_written = write(fd, data, datalen);
     if (bytes_written == -1) {
         fprintf(stderr, "Error writing to named pipe: %s\n", strerror(errno));
@@ -101,16 +102,20 @@ static int write_to_pipe(int fd, char *data, size_t datalen) {
  * @return The number of bytes read from the named pipe, or -1 on error.
  * @throws If an error occurs while reading from the named pipe, an appropriate error message will be printed to stderr.
  */
-static int read_from_pipe(int fd, char* buf, int timeout) {
+int read_from_pipe(int fd, char* buf, double timeout) {
     int bytes_read, retval;
+    double i, f;
     fd_set rfds;
     struct timeval tv;
 
     FD_ZERO(&rfds);
     FD_SET(fd, &rfds);
 
-    tv.tv_sec = timeout;
-    tv.tv_usec = 0;
+    // parse the timeout
+    f = modf(timeout, &i);
+
+    tv.tv_sec = (int)i;
+    tv.tv_usec = (int)(f * 1000000);
 
     retval = select(fd + 1, &rfds, NULL, NULL, &tv);
 
@@ -141,17 +146,18 @@ static int read_from_pipe(int fd, char* buf, int timeout) {
  * @return The number of bytes written to the named pipe, or -1 on error.
  * @throws If an error occurs while opening the named pipe, waiting for the pipe to become available, or writing to the named pipe, an appropriate error message will be printed to stderr.
  */
-int send_data(const char *pipe_name, char *buf, int buflen, int timeout) {
+int send_data(const char *pipe_name, char *buf, int buflen, double timeout) {
     int fd, bytes_written;
+    int timeout_ms = (int)(timeout * 1000);
     // wait until the pipe is opened
-    time_t start_time = time(NULL);
-    while ((timeout * 10) > 0) {
+    while ((timeout_ms) > 0) {
         fd = open_pipe(pipe_name, false);
         if (fd >= 0) {
             break;
         }
-        timeout--;
-        usleep(100000); // sleep for 0.1 second
+        // sleep for 10 ms
+        timeout_ms -= 10;
+        usleep(10000); 
     }
     if (fd < 0) {
         fprintf(stderr, "Timeout waiting for pipe to open\n");
@@ -173,7 +179,7 @@ int send_data(const char *pipe_name, char *buf, int buflen, int timeout) {
  * @return The number of bytes read from the named pipe, or -1 on error.
  * @throws If an error occurs while opening the named pipe, waiting for data to be available on the pipe, or reading from the named pipe, an appropriate error message will be printed to stderr.
  */
-int read_data(const char *pipe_name, char *buf, int timeout) {
+int read_data(const char *pipe_name, char *buf, double timeout) {
     int fd, bytes_read;
     fd = open_pipe(pipe_name, true);
     if (fd == -1) {

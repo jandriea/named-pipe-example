@@ -25,12 +25,17 @@
 #ifndef PIPE_HANDLER_H
 #define PIPE_HANDLER_H
 
+#include <stdbool.h>
+
 #define PIPE_SET_NAME "/tmp/my_pipe_set"
 #define PIPE_GET_NAME "/tmp/my_pipe_get"
 
 #define BLOCK_SIZE 4096
 
-int send_data(const char *pipe_name, char *buf, int buflen, int timeout);
-int read_data(const char *pipe_name, char *buf, int timeout);
+int open_pipe(const char *name, bool isRead);
+int write_to_pipe(int fd, char *data, size_t datalen);
+int read_from_pipe(int fd, char* buf, double timeout);
+int send_data(const char *pipe_name, char *buf, int buflen, double timeout);
+int read_data(const char *pipe_name, char *buf, double timeout);
 
 #endif
