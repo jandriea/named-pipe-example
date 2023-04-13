@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     printf("writing: \"%s\"\n", argv[1]);
 
     snprintf(buf, BLOCK_SIZE, "%s", argv[1]);
-    buflen = send_data(PIPE_SET_NAME, buf, strlen(buf), 10);
+    buflen = send_data(PIPE_SET_NAME, buf, strlen(buf), 0.1);
     if (buflen == strlen(buf)) {
         fprintf(stdout, "Successfully written %d bytes\n", buflen);
         buflen = read_data(PIPE_GET_NAME, buf, 10);

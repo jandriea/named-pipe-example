@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
         fprintf(stdout, "Received : %.*s\n", buflen, buf);
         fprintf(stdout, "Sending ACK\n");
         char ack[] = "ACK";
-        buflen = send_data(PIPE_GET_NAME, ack, strlen(ack), 10);
+        buflen = send_data(PIPE_GET_NAME, ack, strlen(ack), 0.1);
         if (buflen == strlen(ack)) {
             fprintf(stdout, "Successfully written %d bytes\n", buflen);
         }
