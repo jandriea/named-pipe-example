@@ -25,3 +25,7 @@ target_link_libraries(write_ack pipe_handler)
 # Create executable 4
 add_executable(read_ack source/read_ack.c)
 target_link_libraries(read_ack pipe_handler)
+
+# Create executable 5
+add_executable(read_loop source/read_loop.c)
+target_link_libraries(read_loop pipe_handler)
